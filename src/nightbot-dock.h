@@ -42,6 +42,7 @@ private:
 	QPushButton *alertButton;
 	QToolButton *srToggleButton;
 	QSlider *volumeSlider;
+	bool volumeCorrectionPending = false;
 };
 
 #endif // NIGHTBOT_DOCK_H

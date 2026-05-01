@@ -48,6 +48,12 @@ void SettingsManager::Load()
 		obs_data_set_bool(settings, Setting::NowPlayingToFileEnabled, false);
 		obs_data_set_string(settings, Setting::NowPlayingToFilePath, "");
 	}
+
+	// Apply defaults for keys that may be missing after an upgrade.
+	// obs_data_get_int returns 0 for missing keys, so Volume needs an
+	// explicit default to avoid silencing playback on first upgrade.
+	if (!obs_data_has_user_value(settings, Setting::Volume))
+		obs_data_set_int(settings, Setting::Volume, 100);
 }
 
 void SettingsManager::Save()
@@ -134,6 +140,35 @@ void SettingsManager::SetAutoRefreshInterval(int interval)
 int SettingsManager::GetAutoRefreshInterval()
 {
 	return static_cast<int>(obs_data_get_int(settings, Setting::AutoRefreshInterval));
+}
+
+void SettingsManager::SetVolume(int volume)
+{
+	obs_data_set_int(settings, Setting::Volume, volume);
+	Save();
+}
+
+void SettingsManager::SetVolumeWithFlag(int volume)
+{
+	obs_data_set_int(settings, Setting::Volume, volume);
+	obs_data_set_bool(settings, Setting::VolumeUserSet, true);
+	Save();
+}
+
+int SettingsManager::GetVolume()
+{
+	return static_cast<int>(obs_data_get_int(settings, Setting::Volume));
+}
+
+void SettingsManager::SetVolumeUserSet(bool userSet)
+{
+	obs_data_set_bool(settings, Setting::VolumeUserSet, userSet);
+	Save();
+}
+
+bool SettingsManager::GetVolumeUserSet()
+{
+	return obs_data_get_bool(settings, Setting::VolumeUserSet);
 }
 
 void SettingsManager::SetAutoRefreshEnabled(bool enabled)

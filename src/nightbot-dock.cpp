@@ -360,6 +360,8 @@ void NightbotDock::updateSRStatusButton(bool isEnabled)
 
 void NightbotDock::onVolumeChanged(int volume)
 {
+	SettingsManager::get().SetVolumeWithFlag(volume);
+	volumeCorrectionPending = false;
 	NightbotAPI::get().SetVolume(volume);
 }
 
@@ -383,17 +385,38 @@ void NightbotDock::onVolumeSliderMoved(int value)
 
 void NightbotDock::updateVolumeSlider(int volume)
 {
-	// Só atualiza o slider se o usuário não estiver interagindo com ele
-	// e se o valor recebido da API for diferente do valor atual.
-	if (volumeSlider->isSliderDown() || volumeSlider->value() == volume) {
+	// Skip update while user is actively dragging the slider
+	if (volumeSlider->isSliderDown())
 		return;
-	}
 
 	volumeSlider->setEnabled(NightbotAuth::get().IsAuthenticated());
+
+	int targetVolume = volume;
+
+	if (SettingsManager::get().GetVolumeUserSet()) {
+		int storedVolume = SettingsManager::get().GetVolume();
+		if (volume != storedVolume) {
+			// API volume was reset (e.g. queue emptied). Push stored
+			// volume back, but only if a correction is not already
+			// in flight to avoid stacking API calls on every poll.
+			if (!volumeCorrectionPending) {
+				volumeCorrectionPending = true;
+				NightbotAPI::get().SetVolume(storedVolume);
+			}
+			targetVolume = storedVolume;
+		} else {
+			volumeCorrectionPending = false;
+		}
+	}
+
+	if (volumeSlider->value() == targetVolume)
+		return;
+
+	// Block signals to prevent feedback loop during programmatic update
 	volumeSlider->blockSignals(true);
-	volumeSlider->setValue(volume);
+	volumeSlider->setValue(targetVolume);
 	volumeSlider->blockSignals(false);
-	volumeSlider->setToolTip(QString::number(volume) + "%");
+	volumeSlider->setToolTip(QString::number(targetVolume) + "%");
 }
 
 void NightbotDock::onPromoteSongClicked(const QString &songId)
