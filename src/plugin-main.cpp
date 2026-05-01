@@ -29,7 +29,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include "nightbot-settings.h"
 #include "SettingsManager.h"
 #include <curl/curl.h>
-#include <algorithm>
 
 static obs_hotkey_id g_nightbot_resume_hotkey_id;
 static obs_hotkey_id g_nightbot_pause_hotkey_id;
@@ -129,7 +128,7 @@ static void hotkey_volume_up(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 	if (pressed) {
 		int current = SettingsManager::get().GetVolume();
 		int step = SettingsManager::get().GetVolumeStep();
-		int newVolume = std::min(current + step, 100);
+		int newVolume = (current + step < 100) ? current + step : 100;
 		obs_log_info("Volume Up hotkey pressed: %d -> %d", current, newVolume);
 		SettingsManager::get().SetVolumeWithFlag(newVolume);
 		NightbotAPI::get().SetVolume(newVolume);
@@ -146,7 +145,7 @@ static void hotkey_volume_down(void *data, obs_hotkey_id id, obs_hotkey_t *hotke
 	if (pressed) {
 		int current = SettingsManager::get().GetVolume();
 		int step = SettingsManager::get().GetVolumeStep();
-		int newVolume = std::max(current - step, 0);
+		int newVolume = (current - step > 0) ? current - step : 0;
 		obs_log_info("Volume Down hotkey pressed: %d -> %d", current, newVolume);
 		SettingsManager::get().SetVolumeWithFlag(newVolume);
 		NightbotAPI::get().SetVolume(newVolume);
