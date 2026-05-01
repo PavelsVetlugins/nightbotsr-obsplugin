@@ -16,6 +16,7 @@ namespace Setting {
 	inline const char *AutoRefreshInterval = "auto_refresh_interval";
 	inline const char *Volume = "volume";
 	inline const char *VolumeUserSet = "volume_user_set";
+	inline const char *VolumeStep = "volume_step";
 	inline const char *NowPlayingSource = "now_playing_source";
 	inline const char *NowPlayingFormat = "now_playing_format";
 	inline const char *NowPlayingToFileEnabled = "now_playing_to_file_enabled";
@@ -44,6 +45,8 @@ public:
 	int GetVolume();
 	void SetVolumeUserSet(bool userSet);
 	bool GetVolumeUserSet();
+	void SetVolumeStep(int step);
+	int GetVolumeStep();
 	void SetNowPlayingSource(const std::string &sourceName);
 	std::string GetNowPlayingSource();
 	void SetNowPlayingFormat(const std::string &format);

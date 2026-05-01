@@ -30,6 +30,7 @@ private slots:
 	void onBrowseFileClicked();
 	void onClearPathClicked();
 	void onFilePathChanged();
+	void onVolumeStepChanged(int value);
 
 private:
 	void UpdateUI(bool just_authenticated = false);
@@ -49,6 +50,7 @@ private:
 	QPushButton *browseButton;
 	QPushButton *clearPathButton;
 	QLabel *fileErrorLabel;
+	QSpinBox *volumeStepSpinBox;
 };
 
 #endif // NIGHTBOT_SETTINGS_H

@@ -163,6 +163,24 @@ NightbotSettingsDialog::NightbotSettingsDialog(QWidget *parent)
 	mainLayout->addWidget(nowPlayingGroup);
 	mainLayout->addLayout(outputLayout);
 
+	// --- Volume Section ---
+	QGroupBox *volumeGroup = new QGroupBox(get_obs_text("Nightbot.Settings.VolumeGroup"));
+	QVBoxLayout *volumeGroupLayout = new QVBoxLayout();
+	volumeGroup->setLayout(volumeGroupLayout);
+
+	QHBoxLayout *volumeStepLayout = new QHBoxLayout();
+	QLabel *volumeStepLabel = new QLabel(get_obs_text("Nightbot.Settings.VolumeStep"));
+	volumeStepSpinBox = new QSpinBox();
+	volumeStepSpinBox->setMinimum(1);
+	volumeStepSpinBox->setMaximum(50);
+	volumeStepSpinBox->setSuffix("%");
+	volumeStepLayout->addWidget(volumeStepLabel);
+	volumeStepLayout->addWidget(volumeStepSpinBox);
+	volumeStepLayout->addStretch();
+	volumeGroupLayout->addLayout(volumeStepLayout);
+
+	mainLayout->addWidget(volumeGroup);
+
 	mainLayout->addStretch();
 
 	QFrame *line = new QFrame();
@@ -183,6 +201,7 @@ NightbotSettingsDialog::NightbotSettingsDialog(QWidget *parent)
 		&NightbotSettingsDialog::onNowPlayingFormatChanged);
 	connect(autoRefreshCheckBox, &QCheckBox::toggled, this, &NightbotSettingsDialog::onAutoRefreshToggled);
 	connect(refreshIntervalSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &NightbotSettingsDialog::onRefreshIntervalChanged);
+	connect(volumeStepSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &NightbotSettingsDialog::onVolumeStepChanged);
 
 	connect(connectButton, &QPushButton::clicked, this,
 		&NightbotSettingsDialog::OnConnectClicked);
@@ -251,6 +270,11 @@ void NightbotSettingsDialog::onRefreshIntervalChanged(int value)
 	if (g_dock_widget)
 		g_dock_widget->UpdateRefreshTimer();
 }
+void NightbotSettingsDialog::onVolumeStepChanged(int value)
+{
+	SettingsManager::get().SetVolumeStep(value);
+}
+
 void NightbotSettingsDialog::onSaveToFileToggled(bool checked)
 {
 	SettingsManager::get().SetNowPlayingToFileEnabled(checked);
@@ -384,6 +408,9 @@ void NightbotSettingsDialog::UpdateUI(bool just_authenticated)
 	autoRefreshCheckBox->setChecked(autoRefreshEnabled);
 	refreshIntervalSpinBox->setEnabled(autoRefreshEnabled);
 	refreshIntervalSpinBox->setValue(SettingsManager::get().GetAutoRefreshInterval());
+	volumeStepSpinBox->blockSignals(true);
+	volumeStepSpinBox->setValue(SettingsManager::get().GetVolumeStep());
+	volumeStepSpinBox->blockSignals(false);
 
 	PopulateTextSources();
 	nowPlayingFormatLineEdit->setText(

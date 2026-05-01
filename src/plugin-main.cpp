@@ -29,14 +29,19 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include "nightbot-settings.h"
 #include "SettingsManager.h"
 #include <curl/curl.h>
+#include <algorithm>
 
 static obs_hotkey_id g_nightbot_resume_hotkey_id;
 static obs_hotkey_id g_nightbot_pause_hotkey_id;
 static obs_hotkey_id g_nightbot_skip_hotkey_id;
+static obs_hotkey_id g_nightbot_volume_up_hotkey_id;
+static obs_hotkey_id g_nightbot_volume_down_hotkey_id;
 
 #define HOTKEY_PAUSE_ID "nightbot_sr.pause"
 #define HOTKEY_RESUME_ID "nightbot_sr.resume"
 #define HOTKEY_SKIP_ID "nightbot_sr.skip"
+#define HOTKEY_VOLUME_UP_ID "nightbot_sr.volume_up"
+#define HOTKEY_VOLUME_DOWN_ID "nightbot_sr.volume_down"
 
 extern void FreeSettingsManager();
 extern void ShutdownNightbotAPI();
@@ -67,6 +72,14 @@ static void save_hotkeys(obs_data_t *save_data, bool saving, void *private_data)
 	obs_data_array_t *skip_hotkey = obs_hotkey_save(g_nightbot_skip_hotkey_id);
 	SettingsManager::get().SetHotkeyData(HOTKEY_SKIP_ID, skip_hotkey);
 	obs_data_array_release(skip_hotkey);
+
+	obs_data_array_t *volume_up_hotkey = obs_hotkey_save(g_nightbot_volume_up_hotkey_id);
+	SettingsManager::get().SetHotkeyData(HOTKEY_VOLUME_UP_ID, volume_up_hotkey);
+	obs_data_array_release(volume_up_hotkey);
+
+	obs_data_array_t *volume_down_hotkey = obs_hotkey_save(g_nightbot_volume_down_hotkey_id);
+	SettingsManager::get().SetHotkeyData(HOTKEY_VOLUME_DOWN_ID, volume_down_hotkey);
+	obs_data_array_release(volume_down_hotkey);
 
 	SettingsManager::get().Save();
 }
@@ -105,6 +118,40 @@ static void hotkey_skip_song(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 	if (pressed) {
 		obs_log_info("Skip hotkey pressed");
 		NightbotAPI::get().ControlSkip();
+	}
+}
+
+static void hotkey_volume_up(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed)
+{
+	Q_UNUSED(data);
+	Q_UNUSED(id);
+	Q_UNUSED(hotkey);
+	if (pressed) {
+		int current = SettingsManager::get().GetVolume();
+		int step = SettingsManager::get().GetVolumeStep();
+		int newVolume = std::min(current + step, 100);
+		obs_log_info("Volume Up hotkey pressed: %d -> %d", current, newVolume);
+		SettingsManager::get().SetVolumeWithFlag(newVolume);
+		NightbotAPI::get().SetVolume(newVolume);
+		if (g_dock_widget)
+			QMetaObject::invokeMethod(g_dock_widget, [newVolume]() { g_dock_widget->updateVolumeSlider(newVolume); }, Qt::QueuedConnection);
+	}
+}
+
+static void hotkey_volume_down(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed)
+{
+	Q_UNUSED(data);
+	Q_UNUSED(id);
+	Q_UNUSED(hotkey);
+	if (pressed) {
+		int current = SettingsManager::get().GetVolume();
+		int step = SettingsManager::get().GetVolumeStep();
+		int newVolume = std::max(current - step, 0);
+		obs_log_info("Volume Down hotkey pressed: %d -> %d", current, newVolume);
+		SettingsManager::get().SetVolumeWithFlag(newVolume);
+		NightbotAPI::get().SetVolume(newVolume);
+		if (g_dock_widget)
+			QMetaObject::invokeMethod(g_dock_widget, [newVolume]() { g_dock_widget->updateVolumeSlider(newVolume); }, Qt::QueuedConnection);
 	}
 }
 
@@ -150,6 +197,14 @@ bool obs_module_load(void)
 		HOTKEY_SKIP_ID, obs_module_text("Nightbot.Hotkey.Skip"), hotkey_skip_song, nullptr);
 	obs_log_info("[Nightbot SR] Hotkey 'Skip' registered with ID: %lu", g_nightbot_skip_hotkey_id);
 
+	g_nightbot_volume_up_hotkey_id = obs_hotkey_register_frontend(
+		HOTKEY_VOLUME_UP_ID, obs_module_text("Nightbot.Hotkey.VolumeUp"), hotkey_volume_up, nullptr);
+	obs_log_info("[Nightbot SR] Hotkey 'Volume Up' registered with ID: %lu", g_nightbot_volume_up_hotkey_id);
+
+	g_nightbot_volume_down_hotkey_id = obs_hotkey_register_frontend(
+		HOTKEY_VOLUME_DOWN_ID, obs_module_text("Nightbot.Hotkey.VolumeDown"), hotkey_volume_down, nullptr);
+	obs_log_info("[Nightbot SR] Hotkey 'Volume Down' registered with ID: %lu", g_nightbot_volume_down_hotkey_id);
+
 	obs_frontend_add_save_callback(save_hotkeys, nullptr);
 
 	obs_data_array_t *nightbot_resume_hotkey = SettingsManager::get().GetHotkeyData(HOTKEY_RESUME_ID);
@@ -164,6 +219,14 @@ bool obs_module_load(void)
 	obs_hotkey_load(g_nightbot_skip_hotkey_id, nightbot_skip_hotkey);
 	obs_data_array_release(nightbot_skip_hotkey);
 
+	obs_data_array_t *nightbot_volume_up_hotkey = SettingsManager::get().GetHotkeyData(HOTKEY_VOLUME_UP_ID);
+	obs_hotkey_load(g_nightbot_volume_up_hotkey_id, nightbot_volume_up_hotkey);
+	obs_data_array_release(nightbot_volume_up_hotkey);
+
+	obs_data_array_t *nightbot_volume_down_hotkey = SettingsManager::get().GetHotkeyData(HOTKEY_VOLUME_DOWN_ID);
+	obs_hotkey_load(g_nightbot_volume_down_hotkey_id, nightbot_volume_down_hotkey);
+	obs_data_array_release(nightbot_volume_down_hotkey);
+
 	obs_log_info("[Nightbot SR] Plugin loaded successfully (version %s)", PLUGIN_VERSION);
 	return true;
 }
@@ -173,6 +236,8 @@ void obs_module_unload(void)
 	obs_hotkey_unregister(g_nightbot_resume_hotkey_id);
 	obs_hotkey_unregister(g_nightbot_pause_hotkey_id);
 	obs_hotkey_unregister(g_nightbot_skip_hotkey_id);
+	obs_hotkey_unregister(g_nightbot_volume_up_hotkey_id);
+	obs_hotkey_unregister(g_nightbot_volume_down_hotkey_id);
 
 	ShutdownNightbotAPI();
 	FreeSettingsManager();

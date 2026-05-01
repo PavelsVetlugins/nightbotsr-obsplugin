@@ -20,6 +20,7 @@ public:
 
 public slots:
 	void SetPlayPauseState(bool isPlaying);
+	void updateVolumeSlider(int volume);
 
 private slots:
 	void UpdateSongQueue(const QList<SongItem> &queue);
@@ -33,7 +34,6 @@ private slots:
 	void onVolumeChanged(int volume);
 	void onAuthStatusChanged(bool success);
 	void onVolumeSliderMoved(int value);
-	void updateVolumeSlider(int volume);
 
 private:
 	QPushButton *playPauseButton;

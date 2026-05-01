@@ -54,6 +54,8 @@ void SettingsManager::Load()
 	// explicit default to avoid silencing playback on first upgrade.
 	if (!obs_data_has_user_value(settings, Setting::Volume))
 		obs_data_set_int(settings, Setting::Volume, 100);
+	if (!obs_data_has_user_value(settings, Setting::VolumeStep))
+		obs_data_set_int(settings, Setting::VolumeStep, 5);
 }
 
 void SettingsManager::Save()
@@ -169,6 +171,17 @@ void SettingsManager::SetVolumeUserSet(bool userSet)
 bool SettingsManager::GetVolumeUserSet()
 {
 	return obs_data_get_bool(settings, Setting::VolumeUserSet);
+}
+
+void SettingsManager::SetVolumeStep(int step)
+{
+	obs_data_set_int(settings, Setting::VolumeStep, step);
+	Save();
+}
+
+int SettingsManager::GetVolumeStep()
+{
+	return static_cast<int>(obs_data_get_int(settings, Setting::VolumeStep));
 }
 
 void SettingsManager::SetAutoRefreshEnabled(bool enabled)
