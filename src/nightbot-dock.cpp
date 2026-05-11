@@ -229,8 +229,8 @@ void NightbotDock::UpdateSongQueue(const QList<SongItem> &queue)
 			obs_data_release(settings);
 			obs_source_release(textSource);
 		} else {
-			obs_log_warning("[Nightbot SR/Dock] Now playing source '%s' not found.", sourceName.c_str());
-			SettingsManager::get().SetNowPlayingSource("");
+			obs_log_warning("[Nightbot SR/Dock] Now playing source '%s' not found. It may not be loaded yet.",
+					sourceName.c_str());
 		}
 	}
 
