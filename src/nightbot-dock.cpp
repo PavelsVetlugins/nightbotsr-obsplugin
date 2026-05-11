@@ -438,3 +438,8 @@ void NightbotDock::SetPlayPauseState(bool isPlaying)
 	}
 	playPauseButton->setProperty("isPlaying", isPlaying);
 }
+
+bool NightbotDock::IsPlaying() const
+{
+	return playPauseButton->property("isPlaying").toBool();
+}

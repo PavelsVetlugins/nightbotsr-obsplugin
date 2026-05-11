@@ -20,6 +20,7 @@ public:
 
 public slots:
 	void SetPlayPauseState(bool isPlaying);
+	bool IsPlaying() const;
 	void updateVolumeSlider(int volume);
 
 private slots:
